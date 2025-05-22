@@ -1,4 +1,5 @@
-import {db} from "../index.js"
+import {db} from "../config/database.js";
+
 export async function validarToken (req, res, next) {
 // verificar autenticação
 const {authorization} = req.headers;
@@ -6,7 +7,7 @@ const token = authorization?.replace("Bearer", "").trim();
 if(!token) return res.sendStatus(401);    
 
 try {
-    const sessao = await db.collection('sessoes').findOne({token});
+    const sessao = await db.collection("sessoes").findOne({token});
     if(!sessao) return res.sendStatus(401);  
 
     next();
