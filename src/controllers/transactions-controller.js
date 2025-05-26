@@ -20,7 +20,8 @@ export async function transaction(req, res) {
         await db.collection("transactions").insertOne({
             value,
             description,
-            type
+            type,
+            user: res.locals.user._id
         });
         res.sendStatus(201);
     } catch (error) {
@@ -29,8 +30,22 @@ export async function transaction(req, res) {
 };
 
 export async function getTransactions(req, res) {
+    const page = req.query.page || 1;
+    if (isNaN(page) || page < 1) {
+        return res.status(400).send("Página inválida");
+    }
+    const limit = 10;
+    const skip = (page - 1) * limit;
+
     try {
-        const transactions = await db.collection("transactions").find({ userId: req.userId }).toArray();
+        const userId = res.locals.user._id;
+        const transactions = await db.collection("transactions")
+        .find({
+             user: userId 
+            })
+        .skip(skip)
+        .limit(limit)
+        .toArray();
         res.status(200).send(transactions);
     } catch (error) {
         return res.status(500).send(error.message);
@@ -40,6 +55,7 @@ export async function getTransactions(req, res) {
 export async function editTransaction(req, res) {
     const { id } = req.params;
     const { value, description, type } = req.body;
+    const userId = res.locals.user._id;
 
     const validation = transactionSchema.validate({ value, description, type }, { abortEarly: false });
     if (validation.error) {
@@ -48,6 +64,14 @@ export async function editTransaction(req, res) {
     }
 
     try {
+        const transaction = await db.collection("transactions").findOne({ _id: new ObjectId(id) });
+        if (!transaction) {
+            return res.sendStatus(404);
+        }
+        if (transaction.user.toString() !== userId.toString()) {
+            return res.sendStatus(401);
+        }
+
         await db.collection("transactions").updateOne(
             { _id: new ObjectId(id) },
             { $set: { value, description, type } }
@@ -60,8 +84,16 @@ export async function editTransaction(req, res) {
 
 export async function deleteTransaction(req, res) {
     const { id } = req.params;
+    const userId = res.locals.user._id;
 
     try {
+        const transaction = await db.collection("transactions").findOne({ _id: new ObjectId(id) });
+        if (!transaction) {
+            return res.sendStatus(404);
+        }
+        if (transaction.user.toString() !== userId.toString()) {
+            return res.sendStatus(401);
+        }
         await db.collection("transactions").deleteOne({ _id: new ObjectId(id) });
         res.sendStatus(204);
     } catch (error) {

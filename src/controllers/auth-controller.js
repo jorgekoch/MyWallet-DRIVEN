@@ -29,12 +29,12 @@ export async function getSignUp (req, res) {
 
         res.sendStatus(201);
         } catch (err) {
-            return res.status(500).send(err.message);
+            return res.status(422).send(err.message);
         }
 };
 
 
-export async function getSignIn (req, res, next) {
+export async function getSignIn (req, res) {
     const usuario = req.body;
     
     const validation = sessaoSchema.validate(usuario, { abortEarly: false });

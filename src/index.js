@@ -1,22 +1,17 @@
 import express, {json} from 'express';
 import cors from 'cors';
 
-import { getSignIn, getSignUp } from './controllers/auth-controller.js';
-import { transaction, getTransactions, editTransaction, deleteTransaction } from './controllers/transactions-controller.js';
-import { validarToken } from './middlewares/validarToken.js';
+import authRouter from './routers/auth-router.js';
+import transactionsRouter from './routers/transactions-router.js';
 
 const app = express();  
 app.use(express.json());
 app.use(cors());
 app.use(json());
 
-app.post("/sign-up", getSignUp);
-app.post("/sign-in", getSignIn);
-app.post("/transactions", validarToken, transaction);
-app.get("/transactions", validarToken, getTransactions);
-app.put("/transactions/:id", validarToken, editTransaction);
-app.delete("/transactions/:id", validarToken, deleteTransaction);
+app.use(authRouter);
+app.use(transactionsRouter);
 
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Rodando na porta ${PORT}`));
+const port = process.env.PORT || 5000;
+app.listen(port, () => console.log(`Rodando na porta ${port}`));
